@@ -27,6 +27,10 @@ gainers = 0
 losers = 0
 break_evens = 0
 total_return = 0
+best_ticker = ""
+best_return = None
+worst_ticker = ""
+worst_return = None
 
 for ticker, start_price, end_price in stocks:
     stock_return = calculate_return(start_price, end_price) 
@@ -39,6 +43,14 @@ for ticker, start_price, end_price in stocks:
     else: 
         break_evens += 1
 
+    if worst_return is None or stock_return < worst_return:
+        worst_return = stock_return
+        worst_ticker = ticker
+    if best_return is None or stock_return > best_return:
+        best_return = stock_return
+        best_ticker = ticker
+
+
     print_stock_summary(ticker, start_price, end_price)
 
 total_stocks = gainers + losers + break_evens
@@ -47,14 +59,19 @@ loser_percentage = losers / total_stocks * 100
 break_even_percentage = break_evens / total_stocks * 100
 average_return = total_return / total_stocks
 average_return_percent = return_as_percent(average_return)
+best_return = return_as_percent(best_return)
+worst_return = return_as_percent(worst_return)
     
+print("\n--- Portfolio Summary ---")
+print(f"Total stocks analyzed: {total_stocks}")
 print(f"Number of gainers: {gainers}")
 print(f"Number of losers: {losers}")
 print(f"Number of break-evens: {break_evens}")
-print(f"Total stocks analyzed: {total_stocks}")
 print(f"Percentage of stocks that gained: {gainer_percentage:.2f}%")
 print(f"Percentage of stocks that lost: {loser_percentage:.2f}%")
 print(f"Percentage of stocks that broke even: {break_even_percentage:.2f}%")
 print(f"Average returns: {average_return_percent:.2f}%")
+print(f"Best performer: {best_ticker} with {best_return:.2f}%")
+print(f"Worst performer: {worst_ticker} with {worst_return:.2f}%")
     
 
