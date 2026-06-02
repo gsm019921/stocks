@@ -19,10 +19,12 @@ def calculate_win_ratio(gainers, losers):
     if losers != 0 and gainers != 0:
         win_ratio = gainers / losers
         print(f"Win/loss ratio: {win_ratio:.2f}")
-    elif losers == 0:
+    elif losers == 0 and gainers != 0:
         print("Win/loss ratio: N/A - no losing stocks")
-    else:
+    elif losers != 0 and gainers == 0:
         print("Win/loss ratio: N/A - no gaining stocks")
+    else: 
+        print("Win/loss ratio: N/A - no gaining or losing stocks")
     
 def calculate_averages(gainers, losers, total_gainer_return, total_loser_return):
     if losers != 0 and gainers != 0: 
@@ -64,10 +66,14 @@ worst_ticker = ""
 worst_return = None
 total_gainer_return = 0
 total_loser_return = 0
+starting_value = 0
+ending_value = 0
 
 for ticker, start_price, end_price in stocks:
     stock_return = calculate_return(start_price, end_price) 
     total_return += stock_return
+    starting_value += start_price
+    ending_value += end_price
 
     if stock_return > 0:
         gainers += 1
@@ -110,6 +116,6 @@ calculate_averages(gainers, losers, total_gainer_return, total_loser_return)
 print(f"Best performer: {best_ticker} with {best_return:.2f}%")
 print(f"Worst performer: {worst_ticker} with {worst_return:.2f}%")
 calculate_win_ratio(gainers, losers)
-
-    
+print(f"Total starting value: ${starting_value:.2f}")
+print(f"Total ending value: ${ending_value:.2f}")
 
