@@ -48,6 +48,23 @@ def calculate_averages(gainers, losers, total_gainer_return, total_loser_return)
         print("Average gainer return: N/A - no gainers") 
         print("Average loser return: N/A - no losers") 
 
+def print_portfolio_dollar_change(starting_value, ending_value):
+    change_amount = abs(ending_value - starting_value)
+    if starting_value > ending_value: 
+        print(f"Portfolio lost ${change_amount:.2f}")
+    elif starting_value < ending_value:
+        print(f"Portfolio gained ${change_amount:.2f}")
+    else: 
+        print("Portfolio broke even with a $0.00 change")
+
+def print_portfolio_return(starting_value, ending_value):
+    change_amount = ending_value - starting_value
+    if starting_value != 0: 
+        portfolio_return = change_amount / starting_value
+        print(f"Portfolio return: {portfolio_return}%")
+    else: 
+        print(f"Portfolio return: N/A - starting value of $0.00")
+
 stocks = [
     ["AAPL", 100, 110],
     ["TSLA", 100, 80],
@@ -118,4 +135,6 @@ print(f"Worst performer: {worst_ticker} with {worst_return:.2f}%")
 calculate_win_ratio(gainers, losers)
 print(f"Total starting value: ${starting_value:.2f}")
 print(f"Total ending value: ${ending_value:.2f}")
+print_portfolio_dollar_change(starting_value, ending_value)
+print_portfolio_return(starting_value, ending_value)
 
