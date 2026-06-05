@@ -1,8 +1,23 @@
+def return_as_percent(stock_return):
+    return stock_return * 100
+
 def calculate_return(start_price, end_price):
     return (end_price - start_price) / start_price
 
-def return_as_percent(stock_return):
-    return stock_return * 100
+def calculate_dollar_change(starting_value, ending_value):
+    return abs(ending_value - starting_value)
+
+def calculate_portfolio_return(starting_value, ending_value):
+    if starting_value != 0:
+        return ((ending_value - starting_value) / starting_value) * 100
+    else: 
+        return None
+    
+def calculate_win_ratio(gainers, losers):
+    if losers != 0:
+        return gainers / losers
+    else: 
+        return None
 
 def print_stock_summary(ticker, start_price, end_price):
     stock_return = calculate_return(start_price, end_price)
@@ -15,16 +30,13 @@ def print_stock_summary(ticker, start_price, end_price):
     else: 
         print(f"{ticker} broke even with a {percent_return:.2f}% return")
 
-def calculate_win_ratio(gainers, losers):
-    if losers != 0 and gainers != 0:
-        win_ratio = gainers / losers
+def print_win_ratio(win_ratio, gainers, losers):
+    if win_ratio is not None:
         print(f"Win/loss ratio: {win_ratio:.2f}")
-    elif losers == 0 and gainers != 0:
-        print("Win/loss ratio: N/A - no losing stocks")
-    elif losers != 0 and gainers == 0:
-        print("Win/loss ratio: N/A - no gaining stocks")
-    else: 
+    elif gainers == 0 and losers == 0:
         print("Win/loss ratio: N/A - no gaining or losing stocks")
+    else: 
+        print("Win/loss ratio: N/A - no losing stocks")
     
 def calculate_averages(gainers, losers, total_gainer_return, total_loser_return):
     if losers != 0 and gainers != 0: 
@@ -49,7 +61,7 @@ def calculate_averages(gainers, losers, total_gainer_return, total_loser_return)
         print("Average loser return: N/A - no losers") 
 
 def print_portfolio_dollar_change(starting_value, ending_value):
-    change_amount = abs(ending_value - starting_value)
+    change_amount = calculate_dollar_change(starting_value, ending_value)
     if starting_value > ending_value: 
         print(f"Portfolio lost ${change_amount:.2f}")
     elif starting_value < ending_value:
@@ -57,20 +69,17 @@ def print_portfolio_dollar_change(starting_value, ending_value):
     else: 
         print("Portfolio broke even with a $0.00 change")
 
-def print_portfolio_return(starting_value, ending_value):
-    change_amount = ending_value - starting_value
-    if starting_value != 0: 
-        portfolio_return = change_amount / starting_value
-        print(f"Portfolio return: {portfolio_return}%")
+def print_portfolio_return(portfolio_return):
+    if portfolio_return is not None:
+        print(f"Portfolio return: {portfolio_return:.2f}%")
     else: 
         print(f"Portfolio return: N/A - starting value of $0.00")
 
 stocks = [
-    ["AAPL", 100, 110],
-    ["TSLA", 100, 80],
-    ["MSFT", 100, 90],
-    ["NVDA", 200, 110],
-    ["SPY", 500, 490]
+    ["AAPL", 100, 90, 5],
+    ["TSLA", 100, 80, 4],
+    ["MSFT", 200, 200, 3],
+    ["SPY", 500, 475, 2]
 ]
 
 gainers = 0
@@ -85,12 +94,16 @@ total_gainer_return = 0
 total_loser_return = 0
 starting_value = 0
 ending_value = 0
+total_starting_value = 0
+total_ending_value = 0
 
-for ticker, start_price, end_price in stocks:
+for ticker, start_price, end_price, shares in stocks:
     stock_return = calculate_return(start_price, end_price) 
     total_return += stock_return
     starting_value += start_price
     ending_value += end_price
+    total_starting_value = starting_value * shares
+    total_ending_value = ending_value * shares
 
     if stock_return > 0:
         gainers += 1
@@ -119,6 +132,8 @@ average_return = total_return / total_stocks
 average_return_percent = return_as_percent(average_return)
 best_return = return_as_percent(best_return)
 worst_return = return_as_percent(worst_return)
+portfolio_return = calculate_portfolio_return(starting_value, ending_value)
+win_ratio = calculate_win_ratio(gainers, losers)
     
 print("\n--- Portfolio Summary ---")
 print(f"Total stocks analyzed: {total_stocks}")
@@ -136,5 +151,6 @@ calculate_win_ratio(gainers, losers)
 print(f"Total starting value: ${starting_value:.2f}")
 print(f"Total ending value: ${ending_value:.2f}")
 print_portfolio_dollar_change(starting_value, ending_value)
-print_portfolio_return(starting_value, ending_value)
+print_portfolio_return(portfolio_return)
+print_win_ratio(win_ratio, gainers, losers)
 
