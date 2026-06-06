@@ -19,16 +19,19 @@ def calculate_win_ratio(gainers, losers):
     else: 
         return None
 
-def print_stock_summary(ticker, start_price, end_price):
+def print_stock_summary(ticker, start_price, end_price, starting_value, ending_value, shares, starting_allocation, ending_allocation):
     stock_return = calculate_return(start_price, end_price)
     percent_return = return_as_percent(stock_return)
+    dollar_change = calculate_dollar_change(starting_value, ending_value)
+    start_allocation = return_as_percent(starting_allocation)
+    end_allocation = return_as_percent(ending_allocation)
 
     if stock_return > 0: 
-        print(f"{ticker} gained {percent_return:.2f}%")
+        print(f"{ticker} gained {percent_return:.2f}% | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Dollar change: +${dollar_change:.2f}")
     elif stock_return < 0: 
-        print(f"{ticker} lost {abs(percent_return):.2f}%")
+        print(f"{ticker} lost {abs(percent_return):.2f}% | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Dollar change: -${dollar_change:.2f}")
     else: 
-        print(f"{ticker} broke even with a {percent_return:.2f}% return")
+        print(f"{ticker} broke even with a {percent_return:.2f}% return | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Dollar change: ${dollar_change:.2f}")
 
 def print_win_ratio(win_ratio, gainers, losers):
     if win_ratio is not None:
@@ -77,9 +80,9 @@ def print_portfolio_return(portfolio_return):
 
 stocks = [
     ["AAPL", 100, 90, 5],
-    ["TSLA", 100, 80, 4],
+    ["TSLA", 100, 80, 2],
     ["MSFT", 200, 200, 3],
-    ["SPY", 500, 475, 2]
+    ["SPY", 500, 475, 1]
 ]
 
 gainers = 0
@@ -98,12 +101,18 @@ total_starting_value = 0
 total_ending_value = 0
 
 for ticker, start_price, end_price, shares in stocks:
+    starting_value = start_price * shares
+    ending_value = end_price * shares
+    total_starting_value += starting_value
+    total_ending_value += ending_value
+
+for ticker, start_price, end_price, shares in stocks:
+    starting_value = start_price * shares
+    ending_value = end_price * shares
+    starting_allocation = starting_value / total_starting_value
+    ending_allocation = ending_value / total_ending_value
     stock_return = calculate_return(start_price, end_price) 
     total_return += stock_return
-    starting_value += start_price
-    ending_value += end_price
-    total_starting_value = starting_value * shares
-    total_ending_value = ending_value * shares
 
     if stock_return > 0:
         gainers += 1
@@ -121,7 +130,7 @@ for ticker, start_price, end_price, shares in stocks:
         best_return = stock_return
         best_ticker = ticker
 
-    print_stock_summary(ticker, start_price, end_price)
+    print_stock_summary(ticker, start_price, end_price, starting_value, ending_value, shares, starting_allocation, ending_allocation)
 
 
 total_stocks = gainers + losers + break_evens
@@ -132,7 +141,7 @@ average_return = total_return / total_stocks
 average_return_percent = return_as_percent(average_return)
 best_return = return_as_percent(best_return)
 worst_return = return_as_percent(worst_return)
-portfolio_return = calculate_portfolio_return(starting_value, ending_value)
+portfolio_return = calculate_portfolio_return(total_starting_value, total_ending_value)
 win_ratio = calculate_win_ratio(gainers, losers)
     
 print("\n--- Portfolio Summary ---")
@@ -148,9 +157,9 @@ calculate_averages(gainers, losers, total_gainer_return, total_loser_return)
 print(f"Best performer: {best_ticker} with {best_return:.2f}%")
 print(f"Worst performer: {worst_ticker} with {worst_return:.2f}%")
 calculate_win_ratio(gainers, losers)
-print(f"Total starting value: ${starting_value:.2f}")
-print(f"Total ending value: ${ending_value:.2f}")
-print_portfolio_dollar_change(starting_value, ending_value)
+print(f"Total starting value: ${total_starting_value:.2f}")
+print(f"Total ending value: ${total_ending_value:.2f}")
+print_portfolio_dollar_change(total_starting_value, total_ending_value)
 print_portfolio_return(portfolio_return)
 print_win_ratio(win_ratio, gainers, losers)
 
