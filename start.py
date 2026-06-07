@@ -18,6 +18,9 @@ def calculate_win_ratio(gainers, losers):
         return gainers / losers
     else: 
         return None
+    
+def calculate_allocation_drift(start_allocation, end_allocation):
+    return abs(end_allocation - start_allocation)
 
 def print_stock_summary(ticker, start_price, end_price, starting_value, ending_value, shares, starting_allocation, ending_allocation):
     stock_return = calculate_return(start_price, end_price)
@@ -25,13 +28,14 @@ def print_stock_summary(ticker, start_price, end_price, starting_value, ending_v
     dollar_change = calculate_dollar_change(starting_value, ending_value)
     start_allocation = return_as_percent(starting_allocation)
     end_allocation = return_as_percent(ending_allocation)
+    allocation_drift = calculate_allocation_drift(start_allocation, end_allocation)
 
     if stock_return > 0: 
-        print(f"{ticker} gained {percent_return:.2f}% | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Dollar change: +${dollar_change:.2f}")
+        print(f"{ticker} gained {percent_return:.2f}% | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: +{allocation_drift:.2f} pts | Dollar change: +${dollar_change:.2f}")
     elif stock_return < 0: 
-        print(f"{ticker} lost {abs(percent_return):.2f}% | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Dollar change: -${dollar_change:.2f}")
+        print(f"{ticker} lost {abs(percent_return):.2f}% | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: -{allocation_drift:.2f} pts | Dollar change: -${dollar_change:.2f}")
     else: 
-        print(f"{ticker} broke even with a {percent_return:.2f}% return | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Dollar change: ${dollar_change:.2f}")
+        print(f"{ticker} broke even with a {percent_return:.2f}% return | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: {allocation_drift:.2f} pts | Dollar change: ${dollar_change:.2f}")
 
 def print_win_ratio(win_ratio, gainers, losers):
     if win_ratio is not None:
@@ -79,10 +83,9 @@ def print_portfolio_return(portfolio_return):
         print(f"Portfolio return: N/A - starting value of $0.00")
 
 stocks = [
-    ["AAPL", 100, 90, 5],
-    ["TSLA", 100, 80, 2],
-    ["MSFT", 200, 200, 3],
-    ["SPY", 500, 475, 1]
+    ["AAPL", 100, 150, 5],
+    ["TSLA", 100, 50, 5],
+    ["MSFT", 100, 100, 5]
 ]
 
 gainers = 0
