@@ -5,7 +5,7 @@ def calculate_return(start_price, end_price):
     return (end_price - start_price) / start_price
 
 def calculate_dollar_change(starting_value, ending_value):
-    return abs(ending_value - starting_value)
+    return (ending_value - starting_value)
 
 def calculate_portfolio_return(starting_value, ending_value):
     if starting_value != 0:
@@ -28,7 +28,7 @@ def print_stock_summary(ticker, start_price, end_price, starting_value, ending_v
     dollar_change = calculate_dollar_change(starting_value, ending_value)
     start_allocation = return_as_percent(starting_allocation)
     end_allocation = return_as_percent(ending_allocation)
-    allocation_drift = calculate_allocation_drift(start_allocation, end_allocation)
+    allocation_drift = abs(calculate_allocation_drift(start_allocation, end_allocation))
 
     if stock_return > 0: 
         print(f"{ticker} gained {percent_return:.2f}% | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: +{allocation_drift:.2f} pts | Dollar change: +${dollar_change:.2f}")
@@ -82,6 +82,14 @@ def print_portfolio_return(portfolio_return):
     else: 
         print(f"Portfolio return: N/A - starting value of $0.00")
 
+def print_largest_allocation_drift(largest_allocation_drift, largest_allocation_drift_ticker):
+    if largest_allocation_drift > 0:
+        print(f"Largest allocation drift: {largest_allocation_drift_ticker} with +{largest_allocation_drift:.2f} pts")
+    elif largest_allocation_drift < 0: 
+        print(f"Largest allocation drift: {largest_allocation_drift_ticker} with -{largest_allocation_drift:.2f} pts")
+    else:
+        print(f"Largest allocation drift: {largest_allocation_drift_ticker} with {largest_allocation_drift:.2f} pts")
+
 stocks = [
     ["AAPL", 100, 150, 5],
     ["TSLA", 100, 50, 5],
@@ -102,6 +110,8 @@ starting_value = 0
 ending_value = 0
 total_starting_value = 0
 total_ending_value = 0
+largest_allocation_drift = 0
+allocation_drift = 0
 
 for ticker, start_price, end_price, shares in stocks:
     starting_value = start_price * shares
@@ -116,7 +126,12 @@ for ticker, start_price, end_price, shares in stocks:
     ending_allocation = ending_value / total_ending_value
     stock_return = calculate_return(start_price, end_price) 
     total_return += stock_return
+    allocation_drift = calculate_allocation_drift(starting_allocation, ending_allocation)
 
+    if allocation_drift > largest_allocation_drift: 
+        largest_allocation_drift = allocation_drift
+        largest_allocation_drift_ticker = ticker
+    
     if stock_return > 0:
         gainers += 1
         total_gainer_return += stock_return
@@ -162,6 +177,7 @@ print(f"Worst performer: {worst_ticker} with {worst_return:.2f}%")
 calculate_win_ratio(gainers, losers)
 print(f"Total starting value: ${total_starting_value:.2f}")
 print(f"Total ending value: ${total_ending_value:.2f}")
+print_largest_allocation_drift(largest_allocation_drift, largest_allocation_drift_ticker)
 print_portfolio_dollar_change(total_starting_value, total_ending_value)
 print_portfolio_return(portfolio_return)
 print_win_ratio(win_ratio, gainers, losers)
