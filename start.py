@@ -1,5 +1,5 @@
-def return_as_percent(stock_return):
-    return stock_return * 100
+def return_as_percent(x):
+    return x * 100
 
 def calculate_return(start_price, end_price):
     return (end_price - start_price) / start_price
@@ -22,7 +22,59 @@ def calculate_win_ratio(gainers, losers):
 def calculate_allocation_drift(start_allocation, end_allocation):
     return end_allocation - start_allocation
 
-def print_stock_summary(ticker, start_price, end_price, starting_value, ending_value, shares, starting_allocation, ending_allocation):
+def calculate_sector_summary(stocks):
+    sectors = {}
+    sector_values = {}
+    sector_allocation = {}
+    
+    largest_sector = None
+    largest_sector_value = 0
+    smallest_sector = None
+    smallest_sector_value = None
+
+    starting_value = 0
+    ending_value = 0
+    total_starting_value = 0
+    total_ending_value = 0
+
+    for stock in stocks:
+        starting_value = stock["start_price"] * stock["shares"]
+        ending_value = stock["end_price"] * stock["shares"]
+        total_starting_value += starting_value
+        total_ending_value += ending_value
+
+    for stock in stocks:
+        sector = stock["sector"]
+        ending_value = stock["end_price"] * stock["shares"]
+
+        if sector not in sectors:
+            sectors[sector] = 1
+        else: 
+            sectors[sector] += 1
+
+        if sector not in sector_values:
+            sector_values[sector] = ending_value
+        else: 
+            sector_values[sector] += ending_value
+    
+    for sector in sectors:
+        sector_allocation[sector] = sector_values[sector] / total_ending_value * 100
+
+    for sector in sector_values:
+        if sector_values[sector] > largest_sector_value:
+            largest_sector = sector
+            largest_sector_value = sector_values[sector]
+        
+        if smallest_sector_value is None:
+            smallest_sector = sector
+            smallest_sector_value = sector_values[sector]
+        elif sector_values[sector] < smallest_sector_value:
+            smallest_sector = sector
+            smallest_sector_value = sector_values[sector]
+    
+    return sectors, sector_values, sector_allocation, largest_sector, largest_sector_value, smallest_sector, smallest_sector_value
+
+def print_stock_summary(ticker, start_price, end_price, starting_value, ending_value, shares, starting_allocation, ending_allocation, sector):
     stock_return = calculate_return(start_price, end_price)
     percent_return = return_as_percent(stock_return)
     dollar_change = abs(calculate_dollar_change(starting_value, ending_value))
@@ -31,11 +83,11 @@ def print_stock_summary(ticker, start_price, end_price, starting_value, ending_v
     allocation_drift = calculate_allocation_drift(start_allocation, end_allocation)
 
     if stock_return > 0: 
-        print(f"{ticker} gained {percent_return:.2f}% | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: {allocation_drift:+.2f} pts | Dollar change: +${dollar_change:.2f}")
+        print(f"{ticker} gained {percent_return:.2f}% | Sector: {sector} | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: {allocation_drift:+.2f} pts | Dollar change: +${dollar_change:.2f}")
     elif stock_return < 0: 
-        print(f"{ticker} lost {abs(percent_return):.2f}% | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: {allocation_drift:+.2f} pts | Dollar change: -${dollar_change:.2f}")
+        print(f"{ticker} lost {abs(percent_return):.2f}% | Sector: {sector} | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: {allocation_drift:+.2f} pts | Dollar change: -${dollar_change:.2f}")
     else: 
-        print(f"{ticker} broke even with a {percent_return:.2f}% return | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: {allocation_drift:+.2f} pts | Dollar change: ${dollar_change:.2f}")
+        print(f"{ticker} broke even with a {percent_return:.2f}% return | Sector: {sector} | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: {allocation_drift:+.2f} pts | Dollar change: ${dollar_change:.2f}")
 
 def print_win_ratio(win_ratio, gainers, losers):
     if win_ratio is not None:
@@ -47,16 +99,13 @@ def print_win_ratio(win_ratio, gainers, losers):
     
 def calculate_averages(gainers, losers, total_gainer_return, total_loser_return):
     if losers != 0 and gainers != 0: 
-        average_gainer_return = total_gainer_return / gainers
-        average_loser_return = total_loser_return / losers
-        average_gainer_percent = return_as_percent(average_gainer_return)
-        average_loser_percent = return_as_percent(average_loser_return)
-        print(f"Average gainer return: {average_gainer_percent:.2f}%")
-        print(f"Average loser return: {average_loser_percent:.2f}%")
+        average_gainer_return = return_as_percent(total_gainer_return / gainers)
+        average_loser_return = return_as_percent(total_loser_return / losers)
+        print(f"Average gainer return: {average_gainer_return:.2f}%")
+        print(f"Average loser return: {average_loser_return:.2f}%")
     elif losers == 0 and gainers != 0: 
-        average_gainer_return = total_gainer_return / gainers
-        average_gainer_percent = return_as_percent(average_gainer_return)
-        print(f"Average gainer return: {average_gainer_percent:.2f}%")
+        average_gainer_return = return_as_percent(total_gainer_return / gainers)
+        print(f"Average gainer return: {average_gainer_return:.2f}%")
         print("Average loser return: N/A - no losers") 
     elif gainers == 0 and losers != 0: 
         average_loser_return = total_loser_return / losers
@@ -95,11 +144,33 @@ def print_largest_allocation_drift(largest_allocation_drift, largest_allocation_
         else:
             print(f"Largest allocation drift: {largest_allocation_drift_ticker} with {largest:.2f} pts")
 
-stocks = [
-    {"ticker": "AAPL", "start_price": 100, "end_price": 105, "shares": 5, "sector": "Technology"},
-    {"ticker": "NVDA", "start_price": 100, "end_price": 200, "shares": 5, "sector": "Technology"},
-    {"ticker": "MSFT", "start_price": 100, "end_price": 100, "shares": 5, "sector": "Technology"},
-]
+def print_sector_allocation_summary(sectors, sector_values, sector_allocation):
+    print("\n--- Sector Allocation Summary ---")
+
+    for sector in sector_allocation:
+        value = sector_values[sector]
+        allocation = sector_allocation[sector]
+        count = sectors[sector]
+
+        print(f"{sector}: {count} stocks | ${value:.2f} | {allocation:.2f}%")
+
+def print_largest_sector(largest_sector, largest_sector_value):
+    if largest_sector is None: 
+        print("Largest sector: N/A")
+    else: 
+        print(f"Largest sector: {largest_sector} with ${largest_sector_value:.2f}")
+
+def print_smallest_sector(smallest_sector, smallest_sector_value):
+    if smallest_sector is None: 
+        print("Smallest sector: N/A")
+    else: 
+        print(f"Smallest sector: {smallest_sector} with ${smallest_sector_value:.2f}")
+
+stocks = []
+
+
+
+sectors, sector_values, sector_allocation, largest_sector, largest_sector_value, smallest_sector, smallest_sector_value = calculate_sector_summary(stocks)
 
 gainers = 0
 losers = 0
@@ -159,8 +230,7 @@ for stock in stocks:
         best_return = stock_return
         best_ticker = ticker
 
-    print_stock_summary(ticker, start_price, end_price, starting_value, ending_value, shares, starting_allocation, ending_allocation)
-
+    print_stock_summary(ticker, start_price, end_price, starting_value, ending_value, shares, starting_allocation, ending_allocation, sector)
 
 total_stocks = gainers + losers + break_evens
 gainer_percentage = gainers / total_stocks * 100
@@ -192,3 +262,18 @@ print_portfolio_dollar_change(total_starting_value, total_ending_value)
 print_portfolio_return(portfolio_return)
 print_win_ratio(win_ratio, gainers, losers)
 
+print("\n--- Sector Summary ---")
+for sector, count in sectors.items(): 
+    print(f"{sector}: {count} stocks")
+
+print("\n--- Sector Value Summary ---")
+for sector, ending_value in sector_values.items():
+    print(f"{sector}: ${ending_value:.2f}")
+
+print_sector_allocation_summary(sectors, sector_values, sector_allocation)
+
+print_largest_sector(largest_sector, largest_sector_value)
+print_smallest_sector(smallest_sector, smallest_sector_value)
+
+print(f"\nLargest sector: {largest_sector} with ${largest_sector_value:.2f}")
+print(f"Smallest sector: {smallest_sector} with ${smallest_sector_value:.2f}")
