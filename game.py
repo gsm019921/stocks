@@ -1,42 +1,104 @@
 import random
 
-player_inventory = []
+player_inventory = {}
+
 all_items = [
     "sword", "monkey", "potion", "apple", "shield", "bow and arrow"
 ]
 
+def select_item():
+    choices = random.sample(all_items, 3)
+
+    print("Make a selection from the following items:")
+    for index, item in enumerate(choices, start=1):
+        print(f"[{index}] {item}")
+
+    selection = int(input("Selection: "))
+
+    if selection < 1 or selection > len(choices):
+        print("Invalid selection. Giving you the first item.")
+        return choices[0]
+
+    return choices[selection - 1]
+
+def view_inventory():
+    print("---Player Inventory---")
+
+    if not player_inventory:
+        print("Inventory is empty.")
+        return
+
+    for index, (item, count) in enumerate(player_inventory.items(), start=1):
+        print(f"[{index}] {item} x {count}")
+
+def add_item(item):
+    if item in player_inventory:
+        player_inventory[item] += 1
+    else:
+        player_inventory[item] = 1
+
+    print(f"{item} added to inventory.")
+
+def remove_item():
+    if not player_inventory:
+        print("Inventory is empty.")
+        return
+
+    print("---Remove Item---")
+
+    items = list(player_inventory.keys())
+
+    for index, item in enumerate(items, start=1):
+        print(f"[{index}] {item} x {player_inventory[item]}")
+
+    selection = int(input("What would you like to remove? "))
+
+    if selection < 1 or selection > len(items):
+        print("Invalid selection.")
+        return
+
+    selected_item = items[selection - 1]
+
+    quantity = int(input(f"How many {selected_item}s would you like to remove? "))
+
+    if quantity <= 0:
+        print("Quantity must be greater than 0.")
+        return
+
+    if quantity > player_inventory[selected_item]:
+        print("You do not have that many.")
+        return
+
+    player_inventory[selected_item] -= quantity
+
+    if player_inventory[selected_item] == 0:
+        del player_inventory[selected_item]
+
+    print(f"Removed {quantity} {selected_item}(s).")
+
 while True:
-    main_menu = input ("Main Menu\n View Inventory=V\n " \
-"Add Item=A\n Remove Item=R\n Quit=Q\n")
-    if main_menu == "V":
-        if not player_inventory:  
-            print("Inventory is empty.")
-        else: 
-            for item in player_inventory:
-                print(item)
+    print(
+        "---Main Menu---\n"
+        "View Inventory = V\n"
+        "Add Item = A\n"
+        "Remove Item = R\n"
+        "Quit = Q\n"
+    )
 
-    elif main_menu == "A":
-        item_one = all_items[int(random.randint(0,5))]
-        item_two = all_items[int(random.randint(0,5))]
-        item_three = all_items[int(random.randint(0,5))]
-        
-        selection = int(input(f"Make a selection from the following items:\n"
-                              f"[1]: {item_one}\n"
-                              f"[2]: {item_two}\n"
-                              f"[3]: {item_three}\n"))
-        
-        if selection == 1: 
-            player_inventory.append(item_one)
-        elif selection == 2:
-            player_inventory.append(item_two)
-        else:
-            player_inventory.append(item_three)
+    main_menu_selection = input("Selection: ").upper()
 
-        for item in player_inventory:
-            print(item)
-        
-    elif main_menu == "R":
-        print("removing item")
+    if main_menu_selection == "V":
+        view_inventory()
 
-    elif main_menu == "Q":
+    elif main_menu_selection == "A":
+        item = select_item()
+        add_item(item)
+
+    elif main_menu_selection == "R":
+        remove_item()
+
+    elif main_menu_selection == "Q":
         break
+
+    else:
+        print("Invalid selection.")
