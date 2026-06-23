@@ -132,6 +132,8 @@ def calculate_portfolio_summary(stocks):
     largest_stock_allocation = 0
     largest_stock_allocation_ticker = None
 
+    stock_summaries = []
+
     # first loop: calculate total starting/ending value
     for stock in stocks:
         starting_value = stock["start_price"] * stock["shares"]
@@ -190,7 +192,7 @@ def calculate_portfolio_summary(stocks):
             "sector": sector,
         }
 
-        print_stock_summary(stock_summary)
+        stock_summaries.append(stock_summary)
 
     # calculate final summary metrics
     total_stocks = gainers + losers + break_evens
@@ -237,6 +239,7 @@ def calculate_portfolio_summary(stocks):
         "largest_allocation_drift_ticker": largest_allocation_drift_ticker,
         "portfolio_return": portfolio_return,
         "win_ratio": win_ratio,
+        "stock_summaries": stock_summaries
     }
 
 # print functions
@@ -264,6 +267,15 @@ def print_stock_summary(stock_summary):
         print(f"{ticker} lost {abs(percent_return):.2f}% | Sector: {sector} | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: {allocation_drift:+.2f} pts | Dollar change: -${dollar_change:.2f}")
     else: 
         print(f"{ticker} broke even with a {percent_return:.2f}% return | Sector: {sector} | Shares: {shares} | Start allocation: {start_allocation:.2f}% | Ending allocation: {end_allocation:.2f}% | Allocation drift: {allocation_drift:+.2f} pts | Dollar change: ${dollar_change:.2f}")
+
+def print_stock_summaries(portfolio_summary):
+    stock_summaries = portfolio_summary["stock_summaries"]
+
+    if not stock_summaries: 
+        return
+
+    for stock_summary in stock_summaries:
+        print_stock_summary(stock_summary)
 
 def print_win_ratio(win_ratio, gainers, losers):
     if win_ratio is not None:
@@ -381,6 +393,19 @@ def print_concentration_warnings(sector_summary, concentration_threshold):
     
     print(f"Total concentration warnings: {warning_count}")
 
+def print_stock_concentration_warning(portfolio_summary, stock_concentration_threshold):
+    largest_stock_allocation = portfolio_summary["largest_stock_allocation"]
+    largest_stock_allocation_ticker = portfolio_summary["largest_stock_allocation_ticker"]
+    largest_stock_allocation_percent = return_as_percent(largest_stock_allocation)
+
+    if largest_stock_allocation_ticker is None: 
+        print("Stock concentration warning: N/A - no stocks available")
+    
+    if largest_stock_allocation_percent > stock_concentration_threshold:
+        print(f"Stock concentration warning: {largest_stock_allocation_ticker} is {largest_stock_allocation_percent:.2f}% of the portfolio")
+    else: 
+        print(f"No concentration warnings above {stock_concentration_threshold}%")
+    
 def print_largest_sector_drift(sector_summary):
     largest_sector_drift = sector_summary["largest_sector_drift"]
     largest_sector_drift_name = sector_summary["largest_sector_drift_name"]
@@ -441,6 +466,7 @@ def print_portfolio_summary(portfolio_summary):
     print(f"Total starting value: ${total_starting_value:.2f}")
     print(f"Total ending value: ${total_ending_value:.2f}")
     print_largest_stock_allocation(portfolio_summary)
+    print_stock_concentration_warning(portfolio_summary, stock_concentration_threshold)
     print_largest_allocation_drift(largest_allocation_drift, largest_allocation_drift_ticker)
     print_portfolio_dollar_change(total_starting_value, total_ending_value)
     print_portfolio_return(portfolio_return)
@@ -453,19 +479,54 @@ def print_sector_summary(sector_summary, concentration_threshold):
     print_largest_sector_drift(sector_summary)
     print_concentration_warnings(sector_summary, concentration_threshold)
 
-# stock list
+# stock list + concentration thresholds
 stocks = [
-    {"ticker": "AAPL", "start_price": 100, "end_price": 105, "shares": 5, "sector": "Technology"},
-    {"ticker": "NVDA", "start_price": 100, "end_price": 200, "shares": 5, "sector": "Semiconductors"},
-    {"ticker": "MSFT", "start_price": 100, "end_price": 100, "shares": 5, "sector": "Technology"},
+    {
+        "ticker": "AAPL",
+        "start_price": 100,
+        "end_price": 110,
+        "shares": 5,
+        "sector": "Technology",
+    },
+    {
+        "ticker": "NVDA",
+        "start_price": 100,
+        "end_price": 180,
+        "shares": 4,
+        "sector": "Semiconductors",
+    },
+    {
+        "ticker": "MSFT",
+        "start_price": 100,
+        "end_price": 100,
+        "shares": 6,
+        "sector": "Technology",
+    },
+    {
+        "ticker": "JNJ",
+        "start_price": 100,
+        "end_price": 95,
+        "shares": 3,
+        "sector": "Healthcare",
+    },
+    {
+        "ticker": "XOM",
+        "start_price": 100,
+        "end_price": 120,
+        "shares": 2,
+        "sector": "Energy",
+    },
 ]
+
+concentration_threshold = 40
+stock_concentration_threshold = 50
 
 # sector and portfolio summary dictionaries
 portfolio_summary = calculate_portfolio_summary(stocks)
 sector_summary = calculate_sector_summary(stocks)
 
 # print + concentration threshold
-concentration_threshold = 40
+print_stock_summaries(portfolio_summary)
 print_portfolio_summary(portfolio_summary)
 print_sector_summary(sector_summary, concentration_threshold)
 
