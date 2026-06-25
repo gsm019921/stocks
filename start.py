@@ -244,6 +244,105 @@ def calculate_portfolio_summary(stocks):
         "stock_summaries": stock_summaries
     }
 
+def calculate_pandas_portfolio_summary(df):
+    total_stocks = len(df)
+
+    if total_stocks == 0:
+        return {
+            "total_stocks": 0,
+            "gainers": 0,
+            "losers": 0,
+            "break_evens": 0,
+            "gainer_percentage": None,
+            "loser_percentage": None,
+            "break_even_percentage": None,
+            "average_return": None,
+            "average_gainer_return": None,
+            "average_loser_return": None,
+            "portfolio_return": None,
+            "win_loss_ratio": None,
+            "total_starting_value": 0,
+            "total_ending_value": 0,
+            "best_ticker": None,
+            "best_return": None,
+            "worst_ticker": None,
+            "worst_return": None,
+            "largest_allocation_drift_ticker": None,
+            "largest_allocation_drift": None,
+        }
+
+    total_starting_value = df["starting_value"].sum()
+    total_ending_value = df["ending_value"].sum()
+
+    largest_drift_row = df.loc[df["abs_allocation_drift"].idxmax()]
+    best_return_row = df.loc[df["percent_return"].idxmax()]
+    worst_return_row = df.loc[df["percent_return"].idxmin()]
+
+    gainers = (df["percent_return"] > 0).sum()
+    losers = (df["percent_return"] < 0).sum()
+    break_evens = (df["percent_return"] == 0).sum()
+
+    gainer_percentage = gainers / total_stocks * 100
+    loser_percentage = losers / total_stocks * 100
+    break_even_percentage = break_evens / total_stocks * 100
+
+    average_return = df["percent_return"].mean()
+    average_gainer_return = df.loc[df["percent_return"] > 0, "percent_return"].mean()
+    average_loser_return = df.loc[df["percent_return"] < 0, "percent_return"].mean()
+
+    if total_starting_value > 0:
+        portfolio_return = (total_ending_value - total_starting_value) / total_starting_value * 100
+    else:
+        portfolio_return = None
+
+    if losers > 0:
+        win_loss_ratio = gainers / losers
+    else:
+        win_loss_ratio = None
+
+    return {
+        "total_stocks": total_stocks,
+        "gainers": gainers,
+        "losers": losers,
+        "break_evens": break_evens,
+        "gainer_percentage": gainer_percentage,
+        "loser_percentage": loser_percentage,
+        "break_even_percentage": break_even_percentage,
+        "average_return": average_return,
+        "average_gainer_return": average_gainer_return,
+        "average_loser_return": average_loser_return,
+        "portfolio_return": portfolio_return,
+        "win_loss_ratio": win_loss_ratio,
+        "total_starting_value": total_starting_value,
+        "total_ending_value": total_ending_value,
+        "best_ticker": best_return_row["ticker"],
+        "best_return": best_return_row["percent_return"],
+        "worst_ticker": worst_return_row["ticker"],
+        "worst_return": worst_return_row["percent_return"],
+        "largest_allocation_drift_ticker": largest_drift_row["ticker"],
+        "largest_allocation_drift": largest_drift_row["allocation_drift"],
+    }
+
+def prepare_portfolio_dataframe(df):
+    df = df.copy()
+
+    df["starting_value"] = df["start_price"] * df["shares"]
+    df["ending_value"] = df["end_price"] * df["shares"]
+    df["stock_return"] = (df["end_price"] - df["start_price"]) / df["start_price"]
+    df["percent_return"] = df["stock_return"] * 100
+
+    total_starting_value = df["starting_value"].sum()
+    total_ending_value = df["ending_value"].sum()
+
+    df["starting_allocation"] = df["starting_value"] / total_starting_value
+    df["ending_allocation"] = df["ending_value"] / total_ending_value
+    df["starting_allocation_percent"] = df["starting_allocation"] * 100
+    df["ending_allocation_percent"] = df["ending_allocation"] * 100
+    df["allocation_drift"] = df["ending_allocation_percent"] - df["starting_allocation_percent"]
+    df["abs_allocation_drift"] = df["allocation_drift"].abs()
+
+    return df
+
 # print functions
 def print_stock_summary(stock_summary):
     ticker = stock_summary["ticker"]
@@ -481,91 +580,43 @@ def print_sector_summary(sector_summary, concentration_threshold):
     print_largest_sector_drift(sector_summary)
     print_concentration_warnings(sector_summary, concentration_threshold)
 
-def calculate_pandas_portfolio_summary(df):
-    total_stocks = len(df)
+def print_pandas_portfolio_summary(pandas_portfolio_summary):
+    print("\n--- Pandas Portfolio Summary ---")
 
-    if total_stocks == 0:
-        return {
-            "total_stocks": 0,
-            "gainers": 0,
-            "losers": 0,
-            "break_evens": 0,
-            "gainer_percentage": None,
-            "loser_percentage": None,
-            "break_even_percentage": None,
-            "average_return": None,
-            "average_gainer_return": None,
-            "average_loser_return": None,
-            "portfolio_return": None,
-            "win_loss_ratio": None,
-            "total_starting_value": 0,
-            "total_ending_value": 0,
-            "best_ticker": None,
-            "best_return": None,
-            "worst_ticker": None,
-            "worst_return": None,
-            "largest_allocation_drift_ticker": None,
-            "largest_allocation_drift": None,
-        }
+    if pandas_portfolio_summary["total_stocks"] == 0:
+        print("N/A - no stocks available")
+        return
+    
+    print(f"Total stocks analyzed: {pandas_portfolio_summary['total_stocks']}")
+    print(f"Number of gainers: {pandas_portfolio_summary['gainers']}")
+    print(f"Number of losers: {pandas_portfolio_summary['losers']}")
+    print(f"Number of break-evens: {pandas_portfolio_summary['break_evens']}")
 
-    total_starting_value = df["starting_value"].sum()
-    total_ending_value = df["ending_value"].sum()
-
-    df["starting_allocation"] = df["starting_value"] / total_starting_value
-    df["ending_allocation"] = df["ending_value"] / total_ending_value
-    df["starting_allocation_percent"] = df["starting_allocation"] * 100
-    df["ending_allocation_percent"] = df["ending_allocation"] * 100
-    df["allocation_drift"] = df["ending_allocation_percent"] - df["starting_allocation_percent"]
-    df["abs_allocation_drift"] = df["allocation_drift"].abs()
-
-    largest_drift_row = df.loc[df["abs_allocation_drift"].idxmax()]
-    best_return_row = df.loc[df["percent_return"].idxmax()]
-    worst_return_row = df.loc[df["percent_return"].idxmin()]
-
-    gainers = (df["percent_return"] > 0).sum()
-    losers = (df["percent_return"] < 0).sum()
-    break_evens = (df["percent_return"] == 0).sum()
-
-    gainer_percentage = gainers / total_stocks * 100
-    loser_percentage = losers / total_stocks * 100
-    break_even_percentage = break_evens / total_stocks * 100
-
-    average_return = df["percent_return"].mean()
-    average_gainer_return = df.loc[df["percent_return"] > 0, "percent_return"].mean()
-    average_loser_return = df.loc[df["percent_return"] < 0, "percent_return"].mean()
-
-    if total_starting_value > 0:
-        portfolio_return = (total_ending_value - total_starting_value) / total_starting_value * 100
+    if pandas_portfolio_summary["portfolio_return"] is not None:
+        print(f"Portfolio return: {pandas_portfolio_summary['portfolio_return']:.2f}%")
     else:
-        portfolio_return = None
+        print("Portfolio return: N/A")
 
-    if losers > 0:
-        win_loss_ratio = gainers / losers
-    else:
-        win_loss_ratio = None
+    print(
+        f"Best performer: {pandas_portfolio_summary['best_ticker']} "
+        f"with {pandas_portfolio_summary['best_return']:.2f}%"
+    )
 
-    return {
-        "total_stocks": total_stocks,
-        "gainers": gainers,
-        "losers": losers,
-        "break_evens": break_evens,
-        "gainer_percentage": gainer_percentage,
-        "loser_percentage": loser_percentage,
-        "break_even_percentage": break_even_percentage,
-        "average_return": average_return,
-        "average_gainer_return": average_gainer_return,
-        "average_loser_return": average_loser_return,
-        "portfolio_return": portfolio_return,
-        "win_loss_ratio": win_loss_ratio,
-        "total_starting_value": total_starting_value,
-        "total_ending_value": total_ending_value,
-        "best_ticker": best_return_row["ticker"],
-        "best_return": best_return_row["percent_return"],
-        "worst_ticker": worst_return_row["ticker"],
-        "worst_return": worst_return_row["percent_return"],
-        "largest_allocation_drift_ticker": largest_drift_row["ticker"],
-        "largest_allocation_drift": largest_drift_row["allocation_drift"],
-    }
+    print(
+        f"Worst performer: {pandas_portfolio_summary['worst_ticker']} "
+        f"with {pandas_portfolio_summary['worst_return']:.2f}%"
+    )
+
+    print(
+        f"Largest allocation drift: {pandas_portfolio_summary['largest_allocation_drift_ticker']} "
+        f"with {pandas_portfolio_summary['largest_allocation_drift']:+.2f} pts"
+    )
+
+def print_pandas_stock_table(df):
+    if df.empty:
+        return
+
+    print(df[["ticker", "starting_allocation_percent", "ending_allocation_percent", "allocation_drift"]])
 
 # stock list + concentration thresholds
 stocks = [
@@ -606,43 +657,15 @@ stocks = [
     },
 ]
 
-df = pd.DataFrame(stocks)
+stock_columns = ["ticker", "start_price", "end_price", "shares", "sector"]
 
-# pandas calculations
-df["starting_value"] = df["start_price"] * df["shares"]
-df["ending_value"] = df["end_price"] * df["shares"]
-df["stock_return"] = (df["end_price"] - df["start_price"]) / df["start_price"]
-df["percent_return"] = df["stock_return"] * 100
+df = pd.DataFrame(stocks, columns=stock_columns)
+df = prepare_portfolio_dataframe(df)
 
 pandas_portfolio_summary = calculate_pandas_portfolio_summary(df)
 
-# print
-print(f"Total stocks analyzed: {pandas_portfolio_summary['total_stocks']}")
-print(f"Number of gainers: {pandas_portfolio_summary['gainers']}")
-print(f"Number of losers: {pandas_portfolio_summary['losers']}")
-print(f"Number of break-evens: {pandas_portfolio_summary['break_evens']}")
-
-if pandas_portfolio_summary["portfolio_return"] is not None:
-    print(f"Portfolio return: {pandas_portfolio_summary['portfolio_return']:.2f}%")
-else:
-    print("Portfolio return: N/A")
-
-print(
-    f"Best performer: {pandas_portfolio_summary['best_ticker']} "
-    f"with {pandas_portfolio_summary['best_return']:.2f}%"
-)
-
-print(
-    f"Worst performer: {pandas_portfolio_summary['worst_ticker']} "
-    f"with {pandas_portfolio_summary['worst_return']:.2f}%"
-)
-
-print(
-    f"Largest allocation drift: {pandas_portfolio_summary['largest_allocation_drift_ticker']} "
-    f"with {pandas_portfolio_summary['largest_allocation_drift']:+.2f} pts"
-)
-
-print(df[["ticker", "starting_allocation_percent", "ending_allocation_percent", "allocation_drift"]])
+print_pandas_portfolio_summary(pandas_portfolio_summary)
+print_pandas_stock_table(df)
 
 concentration_threshold = 40
 stock_concentration_threshold = 50
